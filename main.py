@@ -6,6 +6,7 @@ from fastapi.templating import Jinja2Templates
 from src.helper_func import (
     set_google_api_key,
     load_document,
+    load_website,
     split_documents,
     create_vector_store,
     setup_qa_chain,
@@ -31,20 +32,35 @@ async def home(request: Request):
 @app.post("/upload_query", response_class=HTMLResponse)
 async def upload_and_query(
     request: Request,
-    files: list[UploadFile] = File(...),
+    files: list[UploadFile] = File(None),
+    website_url: str = Form(None),
     question: str = Form(...)
 ):
-    os.makedirs("temp_files", exist_ok=True)
     all_docs = []
 
     try:
-        for file in files:
-            file_path = f"temp_files/{file.filename}"
-            with open(file_path, "wb") as buffer:
-                shutil.copyfileobj(file.file, buffer)
-            docs = load_document(file_path)
+
+        if files and files[0].filename:
+            os.makedirs("temp_files", exist_ok=True)
+            for file in files:
+                file_path = f"temp_files/{file.filename}"
+                with open(file_path, "wb") as buffer:
+                    shutil.copyfileobj(file.file, buffer)
+                docs = load_document(file_path)
+                all_docs.extend(docs)
+                os.remove(file_path)
+        
+        
+        if website_url and website_url.strip():
+            docs = load_website(website_url.strip())
             all_docs.extend(docs)
-            os.remove(file_path)
+        
+        if not all_docs:
+            return templates.TemplateResponse("index.html", {
+                "request": request,
+                "answer": "",
+                "message": "Error: No files or website URL provided."
+            })
 
         chunks = split_documents(all_docs)
         global vector_store
@@ -56,7 +72,7 @@ async def upload_and_query(
         return templates.TemplateResponse("index.html", {
             "request": request,
             "answer": response,
-            "message": "Files uploaded and processed."
+            "message": "Content processed successfully."
         })
     except Exception as e:
         return templates.TemplateResponse("index.html", {

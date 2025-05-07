@@ -6,6 +6,7 @@ from langchain_community.document_loaders import (
     TextLoader,
     CSVLoader,
     Docx2txtLoader,
+    WebBaseLoader,
 )
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_community.vectorstores import Chroma
@@ -36,6 +37,15 @@ def load_document(file_path):
         raise ValueError(f"Unsupported file format: {file_extension}")
 
     return loader(file_path).load()
+
+
+def load_website(url):
+    """Loading content from a website URL"""
+    if not url.startswith(('http://', 'https://')):
+        url = 'https://' + url
+    
+    loader = WebBaseLoader(url)
+    return loader.load()
 
 
 def split_documents(documents, chunk_size = 1000, chunk_overlap = 200):
