@@ -67,9 +67,14 @@ def create_vector_store(documents, persist_dir = "./chroma_db"):
 
 
 def build_prompt_template():
-    """Building the prompt template"""
+    """Building the prompt template for different content types"""
     template = """
-    You are an AI assistant helping users with their questions about documents they've provided.
+    You are an AI assistant helping users with their questions about the content they've provided.
+    The content may include documents (PDF, DOCX), text files, CSV data, or website content.
+    
+    For CSV data, provide structured answers with relevant statistics when appropriate.
+    For website content, clearly reference the source website in your answers.
+    
     {context}
 
     Question: {question}

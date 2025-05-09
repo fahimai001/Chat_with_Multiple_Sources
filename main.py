@@ -2,6 +2,7 @@ from fastapi import FastAPI, UploadFile, File, Form, Request
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
+import shutil
 
 from src.helper_func import (
     set_google_api_key,
@@ -12,7 +13,6 @@ from src.helper_func import (
     setup_qa_chain,
 )
 
-import shutil
 import os
 
 app = FastAPI()
@@ -39,17 +39,14 @@ async def upload_and_query(
     all_docs = []
 
     try:
-
         if files and files[0].filename:
-            os.makedirs("temp_files", exist_ok=True)
             for file in files:
-                file_path = f"temp_files/{file.filename}"
-                with open(file_path, "wb") as buffer:
+                temp_file_path = f"{file.filename}"
+                with open(temp_file_path, "wb") as buffer:
                     shutil.copyfileobj(file.file, buffer)
-                docs = load_document(file_path)
+                docs = load_document(temp_file_path)
                 all_docs.extend(docs)
-                os.remove(file_path)
-        
+                os.remove(temp_file_path)
         
         if website_url and website_url.strip():
             docs = load_website(website_url.strip())
